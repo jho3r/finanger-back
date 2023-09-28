@@ -1,0 +1,1 @@
+DROP TABLE financial_assets;
