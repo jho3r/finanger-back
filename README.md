@@ -41,7 +41,12 @@ This is the backend for the Finanger project. It is a REST API built with Golang
 
 ## Migrations
 
-1. Install the migrate CLI tool: `go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest`
+1. Install the migrate CLI tool:
+
+   ``` bash
+    go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+    ```
+
 2. Use the makefile to create a new migration: `make migrate-new name=<migration_name>`
 3. Add the SQL queries to the migration file
 4. Use the makefile to export the environment variables: `make envs` *(this will export the environment variables from the `.envs/local.env` file)*
