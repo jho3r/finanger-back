@@ -4,20 +4,26 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/jho3r/finanger-back/internal/app/crosscuting"
+	"github.com/jho3r/finanger-back/internal/app/settings"
 	"github.com/jho3r/finanger-back/internal/infrastructure/logger"
 	"golang.org/x/crypto/bcrypt"
 )
 
 var (
 	loggerService   = logger.Setup("domain.user.service")
-	errHash         = errors.New("hash error")
 	errValidateUser = errors.New("validate user error")
+	errParseJWT     = errors.New("parse jwt error")
+	errValidateJWT  = errors.New("validate jwt error")
 )
 
 // UserService is the interface for the user service.
 type Service interface {
 	Signup(user User) error
+	Login(user User) (string, string, error)
+	RefreshToken(refreshToken string) (string, error)
+	GetMe(userID uint) (User, error)
 }
 
 // ServiceImpl is the struct that contains the user service.
@@ -46,12 +52,10 @@ func (s *ServiceImpl) Signup(user User) error {
 		return fmt.Errorf(crosscuting.WrapLabelWithoutError, desc, errValidateUser)
 	}
 
-	hashedPassword, err := hashPassword(user.Password)
+	err = user.HashPassword()
 	if err != nil {
 		return err
 	}
-
-	user.Password = hashedPassword
 
 	if err := s.repo.Create(user); err != nil {
 		loggerService.WithError(err).Error("Error creating the user")
@@ -62,14 +66,89 @@ func (s *ServiceImpl) Signup(user User) error {
 	return nil
 }
 
-func hashPassword(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
+// Login logs in a user, returns a token if the user is valid or an error otherwise.
+func (s *ServiceImpl) Login(user User) (string, string, error) {
+	existingUser, err := s.repo.FindByEmail(user.Email)
 	if err != nil {
-		desc := "Error hashing the password"
-		loggerService.WithError(err).Error(desc)
+		loggerService.WithError(err).Error("Error finding the user by email")
 
-		return "", fmt.Errorf(crosscuting.WrapLabel, desc, errHash, err.Error())
+		return "", "", err
 	}
 
-	return string(bytes), nil
+	if existingUser.Email == "" {
+		desc := "User not found"
+		loggerService.WithError(errValidateUser).Error(desc)
+
+		return "", "", fmt.Errorf(crosscuting.WrapLabelWithoutError, desc, errValidateUser)
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(existingUser.Password), []byte(user.Password)); err != nil {
+		desc := "Invalid password"
+		loggerService.WithError(errValidateUser).Error(desc)
+
+		return "", "", fmt.Errorf(crosscuting.WrapLabelWithoutError, desc, errValidateUser)
+	}
+
+	token, err := existingUser.GenerateToken()
+	if err != nil {
+		return "", "", err
+	}
+
+	refreshToken, err := existingUser.GenerateRefreshToken()
+	if err != nil {
+		return "", "", err
+	}
+
+	return token, refreshToken, nil
+}
+
+// RefreshToken refreshes the access token.
+func (s *ServiceImpl) RefreshToken(refreshToken string) (string, error) {
+	claims, err := validateRefreshToken(refreshToken)
+	if err != nil {
+		return "", err
+	}
+
+	user, err := s.repo.FindByID(claims.UserID)
+	if err != nil {
+		loggerService.WithError(err).Error("Error finding the user by ID")
+
+		return "", err
+	}
+
+	token, err := user.GenerateToken()
+	if err != nil {
+		return "", err
+	}
+
+	return token, nil
+}
+
+// GetMe returns the user with the given ID.
+func (s *ServiceImpl) GetMe(userID uint) (User, error) {
+	user, err := s.repo.FindByID(userID)
+	if err != nil {
+		loggerService.WithError(err).Error("Error finding the user by ID")
+
+		return User{}, err
+	}
+
+	return user, nil
+}
+
+// validateRefreshToken validates the refresh token and returns the claims if the token is valid or an error otherwise.
+func validateRefreshToken(refreshToken string) (*RefreshClaims, error) {
+	token, err := jwt.ParseWithClaims(refreshToken, &RefreshClaims{}, func(token *jwt.Token) (interface{}, error) {
+		return []byte(settings.Auth.JWTRefreshSecret), nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf(crosscuting.WrapLabel, "Error parsing the token", errParseJWT, err.Error())
+	}
+
+	claims, ok := token.Claims.(*RefreshClaims)
+	if !ok || !token.Valid {
+		return nil, fmt.Errorf(crosscuting.WrapLabelWithoutError, "Error validating the token", errValidateJWT)
+	}
+
+	return claims, nil
 }
