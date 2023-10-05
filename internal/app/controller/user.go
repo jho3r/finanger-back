@@ -80,7 +80,7 @@ func Login(userService user.Service) gin.HandlerFunc {
 			return
 		}
 
-		c.SetCookie("refresh_token", refreshToken, 60*60*24*7, "/", "", false, true)
+		c.SetCookie(settings.Auth.RefreshTokenCookieName, refreshToken, 60*60*24*7, "/", "", false, true)
 
 		c.JSON(http.StatusOK, Data{Data: gin.H{"token": token}})
 	}
@@ -89,7 +89,7 @@ func Login(userService user.Service) gin.HandlerFunc {
 // RefreshToken is the controller for the refresh token endpoint.
 func RefreshToken(userService user.Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		refreshToken, err := c.Cookie("refresh_token")
+		refreshToken, err := c.Cookie(settings.Auth.RefreshTokenCookieName)
 		if err != nil {
 			desc := "Error getting the refresh token from the cookie"
 			loggerUser.WithError(err).Error(desc)

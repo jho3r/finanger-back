@@ -29,8 +29,10 @@ type database struct {
 }
 
 type auth struct {
-	JWTSecret        string `envconfig:"JWT_SECRET" required:"true"`
-	JWTRefreshSecret string `envconfig:"JWT_REFRESH_SECRET" required:"true"`
+	JWTSecret              string `envconfig:"JWT_SECRET" required:"true"`
+	JWTRefreshSecret       string `envconfig:"JWT_REFRESH_SECRET" required:"true"`
+	RefreshTokenCookieName string `envconfig:"REFRESH_TOKEN_COOKIE_NAME" default:"refresh_token"`
+	AllowedOrigins         string `envconfig:"ALLOWED_ORIGINS" default:"http://localhost:3000"`
 }
 
 // LoadEnvs loads all the envs of the application.

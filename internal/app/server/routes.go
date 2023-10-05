@@ -18,7 +18,7 @@ import (
 
 var loggerServer = logger.Setup("server")
 
-// SetupServer Init the server with the middlewares and the routes
+// SetupServer Init the server with the middlewares and the routes.
 func SetupServer() *gin.Engine {
 	loggerServer.Info("Initializing server ...")
 
@@ -30,6 +30,7 @@ func SetupServer() *gin.Engine {
 		SkipPaths: []string{basePath + "/health"},
 		Formatter: formatter,
 	}))
+	router.Use(middlewares.CorsMiddleware(middlewares.SplitOrigins(settings.Auth.AllowedOrigins)))
 
 	// Dependencies
 
@@ -56,7 +57,7 @@ func SetupServer() *gin.Engine {
 	users := base.Group("/users")
 	users.POST("/signup", controller.Signup(userService))
 	users.POST("/login", controller.Login(userService))
-	users.POST("/refresh-token", controller.RefreshToken(userService))
+	users.POST("/refresh-token", middlewares.AuthUser(), controller.RefreshToken(userService))
 	users.GET("/me", middlewares.AuthUser(), controller.GetMe(userService))
 
 	return router
