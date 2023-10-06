@@ -1,5 +1,7 @@
 package controller
 
+import "github.com/gin-gonic/gin"
+
 type (
 	// Error is the struct for the error response.
 	Error struct {
@@ -14,6 +16,6 @@ type (
 
 	// Data is the struct for the data response.
 	Data struct {
-		Data interface{} `json:"data"`
+		Data gin.H `json:"data"`
 	}
 )

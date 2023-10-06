@@ -10,12 +10,14 @@ import (
 	"github.com/jho3r/finanger-back/internal/infrastructure/logger"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 var (
-	loggerGorm = logger.Setup("infrastructure.database.gorm")
-	errGorm    = errors.New("gorm or database error")
-	errGormOp  = errors.New("gorm operation error")
+	loggerGorm        = logger.Setup("infrastructure.database.gorm")
+	errGorm           = errors.New("gorm or database error")
+	errGormOp         = errors.New("gorm operation error")
+	ErrRecordNotFound = gorm.ErrRecordNotFound
 )
 
 type Model struct {
@@ -114,16 +116,21 @@ func convertConnStrToDSN(connStr string) string {
 
 // WhereFirst is a wrapper for the gorm Where and First methods.
 func (g *GormImpl) WhereFirst(model interface{}, query interface{}, args ...interface{}) error {
-	if err := g.db.Where(query, args...).First(model).Error; err != nil {
+	if err := g.db.Where(query, args...).Preload(clause.Associations).First(model).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return fmt.Errorf(crosscuting.WrapLabelWithoutError, "Element not found", ErrRecordNotFound)
+		}
+
 		return fmt.Errorf(crosscuting.WrapLabel, "Error getting the first element", errGormOp, err)
 	}
 
 	return nil
 }
 
-// Create is a wrapper for the gorm Create method.
+// Create is a wrapper for the gorm Create method omitting all associations.
 func (g *GormImpl) Create(model interface{}) error {
-	if err := g.db.Create(model).Error; err != nil {
+	// Omitting associations to avoid creating them if they don't exist.
+	if err := g.db.Omit(clause.Associations).Create(model).Error; err != nil {
 		return fmt.Errorf(crosscuting.WrapLabel, "Error creating the element", errGormOp, err)
 	}
 

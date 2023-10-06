@@ -71,6 +71,6 @@ func GetFinancialAssets(finAssetService finasset.Service) gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, Data{Data: finAssets})
+		c.JSON(http.StatusOK, Data{Data: gin.H{"financial_assets": finAssets}})
 	}
 }
