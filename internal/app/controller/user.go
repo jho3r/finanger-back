@@ -139,3 +139,27 @@ func GetMe(userService user.Service) gin.HandlerFunc {
 		c.JSON(http.StatusOK, Data{Data: gin.H{"user": user}})
 	}
 }
+
+// Logout is the controller for the logout endpoint.
+func Logout(userService user.Service) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// refreshToken, err := c.Cookie(settings.Auth.RefreshTokenCookieName)
+		// if err != nil {
+		// 	desc := "Error getting the refresh token from the cookie"
+		// 	loggerUser.WithError(err).Error(desc)
+		// 	c.JSON(http.StatusBadRequest, Error{Message: desc, Error: err.Error()})
+		// 	return
+		// }
+
+		// if err := userService.Logout(refreshToken); err != nil {
+		// 	desc := "Error logging out the user"
+		// 	loggerUser.WithError(err).Error(desc)
+		// 	c.JSON(http.StatusInternalServerError, Error{Message: desc, Error: err.Error()})
+		// 	return
+		// }
+
+		c.SetCookie(settings.Auth.RefreshTokenCookieName, "", -1, "/", "", false, true)
+
+		c.JSON(http.StatusOK, Success{Message: "User logged out successfully"})
+	}
+}

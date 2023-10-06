@@ -59,6 +59,7 @@ func SetupServer() *gin.Engine {
 	users.POST("/login", controller.Login(userService))
 	users.POST("/refresh-token", middlewares.AuthUser(), controller.RefreshToken(userService))
 	users.GET("/me", middlewares.AuthUser(), controller.GetMe(userService))
+	users.POST("/logout", middlewares.AuthUser(), controller.Logout(userService))
 
 	return router
 }
