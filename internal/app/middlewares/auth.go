@@ -42,7 +42,7 @@ func AuthUser() gin.HandlerFunc {
 		}
 
 		// Set the user ID in the context
-		c.Set(settings.Commons.UserIDContextKey, claims.UserID)
+		c.Set(settings.Auth.UserIDContextKey, claims.UserID)
 
 		c.Next()
 	}

@@ -22,7 +22,7 @@ var (
 type Service interface {
 	Signup(user User) error
 	Login(user User) (string, string, error)
-	RefreshToken(refreshToken string) (string, error)
+	RefreshToken(userID uint, refreshToken string) (string, error)
 	GetMe(userID uint) (User, error)
 }
 
@@ -103,10 +103,17 @@ func (s *ServiceImpl) Login(user User) (string, string, error) {
 }
 
 // RefreshToken refreshes the access token.
-func (s *ServiceImpl) RefreshToken(refreshToken string) (string, error) {
+func (s *ServiceImpl) RefreshToken(userID uint, refreshToken string) (string, error) {
 	claims, err := validateRefreshToken(refreshToken)
 	if err != nil {
 		return "", err
+	}
+
+	if claims.UserID != userID {
+		desc := "Invalid user ID"
+		loggerService.WithError(errValidateJWT).Error(desc)
+
+		return "", fmt.Errorf(crosscuting.WrapLabelWithoutError, desc, errValidateJWT)
 	}
 
 	user, err := s.repo.FindByID(claims.UserID)

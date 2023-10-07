@@ -1,9 +1,12 @@
 package controller
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jho3r/finanger-back/internal/app/crosscuting"
 	"github.com/jho3r/finanger-back/internal/app/domains/user"
 	"github.com/jho3r/finanger-back/internal/app/settings"
 	"github.com/jho3r/finanger-back/internal/infrastructure/logger"
@@ -13,7 +16,10 @@ const (
 	errBindingUser = "Error binding the user"
 )
 
-var loggerUser = logger.Setup("controller.user")
+var (
+	loggerUser       = logger.Setup("controller.user")
+	errGettingUserID = errors.New("Error getting the user ID from the context")
+)
 
 // Login is the controller for the login endpoint.
 func Signup(userService user.Service) gin.HandlerFunc {
@@ -21,7 +27,7 @@ func Signup(userService user.Service) gin.HandlerFunc {
 	type signupRequest struct {
 		Name       string `json:"name" binding:"required"`
 		Email      string `json:"email" binding:"required"`
-		FinAssetID int    `json:"fin_asset_id" binding:"required"`
+		FinAssetID uint   `json:"fin_asset_id" binding:"required"`
 		Password   string `json:"password" binding:"required"`
 	}
 
@@ -89,6 +95,13 @@ func Login(userService user.Service) gin.HandlerFunc {
 // RefreshToken is the controller for the refresh token endpoint.
 func RefreshToken(userService user.Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		userID, err := getUserIdFromContext(c)
+		if err != nil {
+			loggerUser.Error(err.Error())
+			c.JSON(http.StatusInternalServerError, Error{Message: err.Error()})
+			return
+		}
+
 		refreshToken, err := c.Cookie(settings.Auth.RefreshTokenCookieName)
 		if err != nil {
 			desc := "Error getting the refresh token from the cookie"
@@ -97,7 +110,7 @@ func RefreshToken(userService user.Service) gin.HandlerFunc {
 			return
 		}
 
-		token, err := userService.RefreshToken(refreshToken)
+		token, err := userService.RefreshToken(userID, refreshToken)
 		if err != nil {
 			desc := "Error refreshing the token"
 			loggerUser.WithError(err).Error(desc)
@@ -112,23 +125,14 @@ func RefreshToken(userService user.Service) gin.HandlerFunc {
 // GetMe is the controller for the get me endpoint.
 func GetMe(userService user.Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		userID, exist := c.Get(settings.Commons.UserIDContextKey)
-		if !exist {
-			desc := "Error getting the user ID from the context"
-			loggerUser.Error(desc)
-			c.JSON(http.StatusInternalServerError, Error{Message: desc})
+		userID, err := getUserIdFromContext(c)
+		if err != nil {
+			loggerUser.Error(err.Error())
+			c.JSON(http.StatusInternalServerError, Error{Message: err.Error()})
 			return
 		}
 
-		userID, ok := userID.(uint)
-		if !ok {
-			desc := "Error getting the user ID from the context"
-			loggerUser.Error(desc)
-			c.JSON(http.StatusInternalServerError, Error{Message: desc})
-			return
-		}
-
-		user, err := userService.GetMe(userID.(uint))
+		user, err := userService.GetMe(userID)
 		if err != nil {
 			desc := "Error getting the user"
 			loggerUser.WithError(err).Error(desc)
@@ -162,4 +166,20 @@ func Logout(userService user.Service) gin.HandlerFunc {
 
 		c.JSON(http.StatusOK, Success{Message: "User logged out successfully"})
 	}
+}
+
+func getUserIdFromContext(c *gin.Context) (uint, error) {
+	desc := "Error getting the user ID from the context"
+
+	userIDAny, exists := c.Get(settings.Auth.UserIDContextKey)
+	if !exists {
+		return 0, fmt.Errorf(crosscuting.WrapLabelWithoutError, desc, errGettingUserID)
+	}
+
+	userID, ok := userIDAny.(uint)
+	if !ok {
+		return 0, fmt.Errorf(crosscuting.WrapLabelWithoutError, desc, errGettingUserID)
+	}
+
+	return userID, nil
 }

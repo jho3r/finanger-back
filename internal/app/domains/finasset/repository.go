@@ -61,7 +61,7 @@ func (r *RepositoryImpl) Get(finAsset FinancialAsset) ([]FinancialAsset, error) 
 
 	query := strings.Join(queryConditions, " AND ")
 
-	if err := r.db.WhereFind(&finAssets, query, args...); err != nil {
+	if err := r.db.WhereFind(&finAssets, false, query, args...); err != nil {
 		loggerRepo.WithError(err).Error("Error getting records from the database")
 
 		return nil, err
