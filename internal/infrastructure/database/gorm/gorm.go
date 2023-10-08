@@ -22,7 +22,7 @@ var (
 
 type Model struct {
 	ID        uint           `gorm:"primarykey" json:"id"`
-	CreatedAt time.Time      `json:"created_at"`
+	CreatedAt time.Time      `gorm:"<-:create" json:"created_at"`
 	UpdatedAt time.Time      `json:"-"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 }
@@ -31,7 +31,9 @@ type Model struct {
 type Gorm interface {
 	WhereFirst(model interface{}, query interface{}, args ...interface{}) error
 	Create(model interface{}) error
-	WhereFind(model interface{}, query interface{}, args ...interface{}) error
+	Save(model interface{}) error
+	Delete(model interface{}) error
+	WhereFind(model interface{}, associations bool, query interface{}, args ...interface{}) error
 }
 
 // Gorm is the struct that contains the gorm database connection.
@@ -137,9 +139,34 @@ func (g *GormImpl) Create(model interface{}) error {
 	return nil
 }
 
+// Save is a wrapper for the gorm Save method omitting all associations.
+func (g *GormImpl) Save(model interface{}) error {
+	// Omitting associations to avoid creating them if they don't exist.
+	if err := g.db.Omit(clause.Associations).Save(model).Error; err != nil {
+		return fmt.Errorf(crosscuting.WrapLabel, "Error saving the element", errGormOp, err)
+	}
+
+	return nil
+}
+
+// Delete is a wrapper for the gorm Delete method.
+func (g *GormImpl) Delete(model interface{}) error {
+	if err := g.db.Delete(model).Error; err != nil {
+		return fmt.Errorf(crosscuting.WrapLabel, "Error deleting the element", errGormOp, err)
+	}
+
+	return nil
+}
+
 // WhereFind is a wrapper for the gorm Where and Find methods.
-func (g *GormImpl) WhereFind(model interface{}, query interface{}, args ...interface{}) error {
-	if err := g.db.Where(query, args...).Find(model).Error; err != nil {
+func (g *GormImpl) WhereFind(model interface{}, associations bool, query interface{}, args ...interface{}) error {
+	db := g.db.Where(query, args...)
+
+	if associations {
+		db = db.Preload(clause.Associations)
+	}
+
+	if err := db.Find(model).Error; err != nil {
 		return fmt.Errorf(crosscuting.WrapLabel, "Error getting the elements", errGormOp, err)
 	}
 

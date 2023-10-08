@@ -1,19 +1,17 @@
 package server
 
 import (
-	"bytes"
 	"fmt"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jho3r/finanger-back/internal/app/controller"
+	"github.com/jho3r/finanger-back/internal/app/domains/asset"
 	"github.com/jho3r/finanger-back/internal/app/domains/finasset"
 	"github.com/jho3r/finanger-back/internal/app/domains/user"
 	"github.com/jho3r/finanger-back/internal/app/middlewares"
 	"github.com/jho3r/finanger-back/internal/app/settings"
 	"github.com/jho3r/finanger-back/internal/infrastructure/database/gorm"
 	"github.com/jho3r/finanger-back/internal/infrastructure/logger"
-	"github.com/sirupsen/logrus"
 )
 
 var loggerServer = logger.Setup("server")
@@ -26,10 +24,7 @@ func SetupServer() *gin.Engine {
 
 	router := gin.New()
 	router.Use(gin.Recovery())
-	router.Use(gin.LoggerWithConfig(gin.LoggerConfig{
-		SkipPaths: []string{basePath + "/health"},
-		Formatter: formatter,
-	}))
+	router.Use(middlewares.LoggerMiddleware(basePath))
 	router.Use(middlewares.CorsMiddleware(middlewares.SplitOrigins(settings.Auth.AllowedOrigins)))
 
 	// Dependencies
@@ -40,10 +35,12 @@ func SetupServer() *gin.Engine {
 	// Repos
 	userRepo := user.NewUserRepository(gormDB)
 	finAssetRepo := finasset.NewCurrencyRepository(gormDB)
+	assetRepo := asset.NewAssetRepository(gormDB)
 
 	// Services
 	userService := user.NewUserService(userRepo)
 	finAssetService := finasset.NewFinAssetService(finAssetRepo)
+	assetService := asset.NewAssetService(assetRepo)
 
 	// Routes
 
@@ -61,38 +58,12 @@ func SetupServer() *gin.Engine {
 	users.GET("/me", middlewares.AuthUser(), controller.GetMe(userService))
 	users.POST("/logout", middlewares.AuthUser(), controller.Logout(userService))
 
+	assets := base.Group("/assets")
+	assets.POST("/", middlewares.AuthUser(), controller.CreateAsset(assetService))
+	assets.GET("/", middlewares.AuthUser(), controller.GetAssets(assetService))
+	assets.GET("/:id", middlewares.AuthUser(), controller.GetAsset(assetService))
+	assets.PUT("/:id", middlewares.AuthUser(), controller.UpdateAsset(assetService))
+	assets.DELETE("/:id", middlewares.AuthUser(), controller.DeleteAsset(assetService))
+
 	return router
-}
-
-// formatter format the log from the gin server.
-func formatter(param gin.LogFormatterParams) string {
-	output := new(bytes.Buffer)
-	log := logger.SetID(loggerServer, "GIN")
-	log.Logger.SetLevel(logrus.InfoLevel)
-	log.Logger.SetOutput(output)
-
-	var statusColor, methodColor, resetColor, bold string
-	if param.IsOutputColor() {
-		statusColor = param.StatusCodeColor()
-		methodColor = param.MethodColor()
-		resetColor = param.ResetColor()
-		bold = "\033[1m"
-	}
-
-	if param.Latency > time.Minute {
-		// Truncate in a golang < 1.8 safe way
-		param.Latency = param.Latency - param.Latency%time.Second
-	}
-
-	log.Infof(
-		"| %s %3d %s | %s %s %s | %10v | %s %s %s | CLIENT_IP=%s X_APP_ID=%s",
-		statusColor, param.StatusCode, resetColor,
-		methodColor, param.Method, resetColor,
-		param.Latency,
-		bold, param.Path, resetColor,
-		param.ClientIP,
-		param.Request.Header.Get("X-Application-ID"),
-	)
-
-	return output.String()
 }

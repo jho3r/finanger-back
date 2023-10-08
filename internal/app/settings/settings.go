@@ -16,10 +16,9 @@ var (
 )
 
 type commons struct {
-	XApplicationID   string `envconfig:"X_APPLICATION_ID" default:"finanger-back"`
-	ProjectName      string `envconfig:"PROJECT_NAME" default:"finanger-back"`
-	Port             string `envconfig:"PORT" required:"true"`
-	UserIDContextKey string `envconfig:"USER_ID_CONTEXT_KEY" default:"user_id"`
+	XApplicationID string `envconfig:"X_APPLICATION_ID" default:"finanger-back"`
+	ProjectName    string `envconfig:"PROJECT_NAME" default:"finanger-back"`
+	Port           string `envconfig:"PORT" required:"true"`
 }
 
 type database struct {
@@ -33,6 +32,7 @@ type auth struct {
 	JWTRefreshSecret       string `envconfig:"JWT_REFRESH_SECRET" required:"true"`
 	RefreshTokenCookieName string `envconfig:"REFRESH_TOKEN_COOKIE_NAME" default:"refresh_token"`
 	AllowedOrigins         string `envconfig:"ALLOWED_ORIGINS" default:"http://localhost:3000"`
+	UserIDContextKey       string `envconfig:"USER_ID_CONTEXT_KEY" default:"user_id"`
 }
 
 // LoadEnvs loads all the envs of the application.

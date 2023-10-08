@@ -33,7 +33,7 @@ type (
 		Name             string                  `json:"name" gorm:"not null"`
 		Email            string                  `json:"email" gorm:"not null;unique"`
 		Password         string                  `json:"-" gorm:"not null"`
-		FinancialAssetID int                     `json:"fin_asset_id" gorm:"not null"`
+		FinancialAssetID uint                    `json:"fin_asset_id" gorm:"not null"`
 		FinancialAsset   finasset.FinancialAsset `json:"financial_asset" gorm:"foreignKey:FinancialAssetID"`
 	}
 
