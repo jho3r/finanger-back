@@ -48,6 +48,27 @@ func AuthUser() gin.HandlerFunc {
 	}
 }
 
+func AuthApiKey() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Get the apiKey from the header
+		apiKey := c.GetHeader(settings.Auth.APIKeyHeaderName)
+		if apiKey == "" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, controller.Error{Message: "API Key header is required", Error: errUnauthorized.Error()})
+
+			return
+		}
+
+		// Validate the apiKey
+		if apiKey != settings.Auth.APIKey {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, controller.Error{Message: "Invalid API Key", Error: errUnauthorized.Error()})
+
+			return
+		}
+
+		c.Next()
+	}
+}
+
 // validateToken validates the token and returns the claims if the token is valid or an error otherwise.
 func validateToken(tokenStr string) (*user.Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenStr, &user.Claims{}, func(token *jwt.Token) (interface{}, error) {

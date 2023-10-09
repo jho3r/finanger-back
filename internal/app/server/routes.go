@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jho3r/finanger-back/internal/app/controller"
 	"github.com/jho3r/finanger-back/internal/app/domains/asset"
+	"github.com/jho3r/finanger-back/internal/app/domains/category"
 	"github.com/jho3r/finanger-back/internal/app/domains/finasset"
 	"github.com/jho3r/finanger-back/internal/app/domains/user"
 	"github.com/jho3r/finanger-back/internal/app/middlewares"
@@ -36,11 +37,13 @@ func SetupServer() *gin.Engine {
 	userRepo := user.NewUserRepository(gormDB)
 	finAssetRepo := finasset.NewCurrencyRepository(gormDB)
 	assetRepo := asset.NewAssetRepository(gormDB)
+	categoryRepo := category.NewCategoryRepository(gormDB)
 
 	// Services
 	userService := user.NewUserService(userRepo)
 	finAssetService := finasset.NewFinAssetService(finAssetRepo)
 	assetService := asset.NewAssetService(assetRepo)
+	categoryService := category.NewCategoryService(categoryRepo)
 
 	// Routes
 
@@ -48,7 +51,7 @@ func SetupServer() *gin.Engine {
 	base.GET("/health", controller.HealthCheck)
 
 	finassets := base.Group("/financial-assets")
-	finassets.POST("/", controller.CreateFinancialAsset(finAssetService))
+	finassets.POST("/", middlewares.AuthApiKey(), controller.CreateFinancialAsset(finAssetService))
 	finassets.GET("/", controller.GetFinancialAssets(finAssetService))
 
 	users := base.Group("/users")
@@ -64,6 +67,10 @@ func SetupServer() *gin.Engine {
 	assets.GET("/:id", middlewares.AuthUser(), controller.GetAsset(assetService))
 	assets.PUT("/:id", middlewares.AuthUser(), controller.UpdateAsset(assetService))
 	assets.DELETE("/:id", middlewares.AuthUser(), controller.DeleteAsset(assetService))
+
+	categories := base.Group("/categories")
+	categories.POST("/", middlewares.AuthApiKey(), controller.CreateCategory(categoryService))
+	categories.GET("/", controller.GetCategories(categoryService))
 
 	return router
 }
