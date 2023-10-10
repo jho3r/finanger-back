@@ -11,7 +11,7 @@ import (
 	"github.com/jho3r/finanger-back/internal/app/domains/user"
 	"github.com/jho3r/finanger-back/internal/app/middlewares"
 	"github.com/jho3r/finanger-back/internal/app/settings"
-	"github.com/jho3r/finanger-back/internal/infrastructure/database/gorm"
+	"github.com/jho3r/finanger-back/internal/infrastructure/gorm"
 	"github.com/jho3r/finanger-back/internal/infrastructure/logger"
 )
 

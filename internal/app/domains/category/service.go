@@ -8,6 +8,7 @@ var loggerService = logger.Setup("domains.category.service")
 type Service interface {
 	CreateCategory(category Category) error
 	GetCategories(catType CategoryType, name string) ([]Category, error)
+	SeedCategories() error
 }
 
 // ServiceImpl is the struct that contains the category service.
@@ -39,4 +40,26 @@ func (s *ServiceImpl) GetCategories(catType CategoryType, name string) ([]Catego
 	}
 
 	return categories, nil
+}
+
+// SeedCategories seeds the categories into the database.
+func (s *ServiceImpl) SeedCategories() error {
+	loggerService.Info("Seeding the categories")
+
+	assets, err := s.repo.Get(Asset, "")
+	if err != nil {
+		loggerService.WithError(err).Error("Error getting the assets from the repo")
+
+		return err
+	}
+
+	if len(assets) == 0 {
+		if err := s.repo.CreateMultiple(Assets); err != nil {
+			loggerService.WithError(err).Error("Error creating the assets")
+
+			return err
+		}
+	}
+
+	return nil
 }

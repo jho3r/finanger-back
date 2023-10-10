@@ -1,6 +1,6 @@
 package category
 
-import "github.com/jho3r/finanger-back/internal/infrastructure/database/gorm"
+import "github.com/jho3r/finanger-back/internal/infrastructure/gorm"
 
 const (
 	// Asset is the type for the asset.
@@ -20,8 +20,8 @@ type (
 	// Category represents a category.
 	Category struct {
 		gorm.Model
-		Name        string       `gorm:"not null"`
-		Description string       `gorm:"not null"`
-		Type        CategoryType `gorm:"not null"`
+		Name        string       `gorm:"not null" json:"name"`
+		Description string       `gorm:"not null" json:"desc"`
+		Type        CategoryType `gorm:"not null" json:"type"`
 	}
 )

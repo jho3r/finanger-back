@@ -3,7 +3,7 @@ package category
 import (
 	"strings"
 
-	"github.com/jho3r/finanger-back/internal/infrastructure/database/gorm"
+	"github.com/jho3r/finanger-back/internal/infrastructure/gorm"
 	"github.com/jho3r/finanger-back/internal/infrastructure/logger"
 )
 
@@ -13,6 +13,7 @@ var loggerRepo = logger.Setup("domains.category.repository")
 type Repository interface {
 	Create(category Category) error
 	Get(catType CategoryType, name string) ([]Category, error)
+	CreateMultiple(categories []Category) error
 }
 
 // RepositoryImpl is the struct that contains the category repository.
@@ -60,4 +61,14 @@ func (r *RepositoryImpl) Get(catType CategoryType, name string) ([]Category, err
 	}
 
 	return categories, nil
+}
+
+// CreateMultiple creates multiple categories.
+func (r *RepositoryImpl) CreateMultiple(categories []Category) error {
+	if err := r.db.Create(&categories); err != nil {
+		loggerRepo.WithError(err).Error("Error creating the categories")
+		return err
+	}
+
+	return nil
 }

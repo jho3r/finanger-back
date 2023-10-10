@@ -3,7 +3,7 @@ package finasset
 import (
 	"strings"
 
-	"github.com/jho3r/finanger-back/internal/infrastructure/database/gorm"
+	"github.com/jho3r/finanger-back/internal/infrastructure/gorm"
 	"github.com/jho3r/finanger-back/internal/infrastructure/logger"
 )
 

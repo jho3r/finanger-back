@@ -1,6 +1,6 @@
 package finasset
 
-import "github.com/jho3r/finanger-back/internal/infrastructure/database/gorm"
+import "github.com/jho3r/finanger-back/internal/infrastructure/gorm"
 
 const (
 	// Currency is the type for the currency.

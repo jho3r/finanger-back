@@ -8,4 +8,3 @@ CREATE TABLE categories (
     deleted_at TIMESTAMP,
     UNIQUE (type, name)
 );
-
