@@ -2,7 +2,7 @@ package asset
 
 import (
 	"github.com/jho3r/finanger-back/internal/app/domains/finasset"
-	"github.com/jho3r/finanger-back/internal/infrastructure/database/gorm"
+	"github.com/jho3r/finanger-back/internal/infrastructure/gorm"
 )
 
 type (

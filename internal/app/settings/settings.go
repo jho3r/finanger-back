@@ -33,6 +33,8 @@ type auth struct {
 	RefreshTokenCookieName string `envconfig:"REFRESH_TOKEN_COOKIE_NAME" default:"refresh_token"`
 	AllowedOrigins         string `envconfig:"ALLOWED_ORIGINS" default:"http://localhost:3000"`
 	UserIDContextKey       string `envconfig:"USER_ID_CONTEXT_KEY" default:"user_id"`
+	APIKeyHeaderName       string `envconfig:"API_KEY_HEADER_NAME" default:"X-API-KEY"`
+	APIKey                 string `envconfig:"API_KEY" required:"true"`
 }
 
 // LoadEnvs loads all the envs of the application.

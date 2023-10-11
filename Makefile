@@ -22,10 +22,10 @@ envs-export:
 	. ./.envs/local.env
 
 migrate-up:
-	migrate -path ./internal/infrastructure/database/migrations -database ${DATABASE_CONN_URL} up
+	migrate -path ./internal/app/database/migrations -database ${DATABASE_CONN_URL} up
 
 migrate-down:
-	migrate -path ./internal/infrastructure/database/migrations -database ${DATABASE_CONN_URL} down
+	migrate -path ./internal/app/database/migrations -database ${DATABASE_CONN_URL} down
 
 migrate-new:
-	migrate create -ext sql -dir ./internal/infrastructure/database/migrations ${name}
+	migrate create -ext sql -dir ./internal/app/database/migrations ${name}
