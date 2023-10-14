@@ -12,7 +12,7 @@ var loggerRepo = logger.Setup("domain.assets.repository")
 // Repository is the interface for the asset repository.
 type Repository interface {
 	Create(asset Asset) error
-	GetAssets(userID uint, finAssetID uint, name string) ([]Asset, error)
+	GetAssets(userID uint, finAssetID uint, name string, categoryID uint) ([]Asset, error)
 	GetAssetByID(userID uint, assetID uint) (Asset, error)
 	Update(asset Asset) error
 	Delete(userID uint, assetID uint) error
@@ -40,7 +40,7 @@ func (r *RepositoryImpl) Create(asset Asset) error {
 }
 
 // GetAssets gets all the assets.
-func (r *RepositoryImpl) GetAssets(userID uint, finAssetID uint, name string) ([]Asset, error) {
+func (r *RepositoryImpl) GetAssets(userID uint, finAssetID uint, name string, categoryID uint) ([]Asset, error) {
 	var assets []Asset
 
 	queryConditions := []string{"user_id = ?"}
@@ -54,6 +54,11 @@ func (r *RepositoryImpl) GetAssets(userID uint, finAssetID uint, name string) ([
 	if name != "" {
 		queryConditions = append(queryConditions, "name LIKE ?")
 		args = append(args, "%"+name+"%")
+	}
+
+	if categoryID != 0 {
+		queryConditions = append(queryConditions, "category_id = ?")
+		args = append(args, categoryID)
 	}
 
 	query := strings.Join(queryConditions, " AND ")

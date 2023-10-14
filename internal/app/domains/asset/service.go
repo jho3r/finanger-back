@@ -7,7 +7,7 @@ var loggerService = logger.Setup("domain.assets.service")
 // Service is the interface for the asset service.
 type Service interface {
 	Create(asset Asset) error
-	GetAssets(userID uint, finAssetID uint, name string) ([]Asset, error)
+	GetAssets(userID uint, finAssetID uint, name string, categoryID uint) ([]Asset, error)
 	GetAssetByID(userID uint, assetID uint) (Asset, error)
 	Update(asset Asset) error
 	Delete(userID uint, assetID uint) error
@@ -33,8 +33,8 @@ func (s *ServiceImpl) Create(asset Asset) error {
 }
 
 // GetAssets gets all the assets.
-func (s *ServiceImpl) GetAssets(userID uint, finAssetID uint, name string) ([]Asset, error) {
-	assets, err := s.repo.GetAssets(userID, finAssetID, name)
+func (s *ServiceImpl) GetAssets(userID uint, finAssetID uint, name string, categoryID uint) ([]Asset, error) {
+	assets, err := s.repo.GetAssets(userID, finAssetID, name, categoryID)
 	if err != nil {
 		return nil, err
 	}
