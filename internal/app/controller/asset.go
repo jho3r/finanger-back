@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jho3r/finanger-back/internal/app/crosscuting"
@@ -21,10 +22,13 @@ var (
 // CreateAsset is the controller for the create asset endpoint.
 func CreateAsset(assetService asset.Service) gin.HandlerFunc {
 	type createRequest struct {
-		Name        string  `json:"name" binding:"required"`
-		Value       float64 `json:"value" binding:"required"`
-		FinAssetID  uint    `json:"fin_asset_id" binding:"required"`
-		Description string  `json:"description" binding:"required"`
+		Name        string    `json:"name" binding:"required"`
+		Value       float64   `json:"value" binding:"required"`
+		FinAssetID  uint      `json:"fin_asset_id" binding:"required"`
+		Description string    `json:"description" binding:"required"`
+		IsLiquid    bool      `json:"is_liquid"`
+		CategoryID  uint      `json:"category_id" binding:"required"`
+		Adate       time.Time `json:"adquisition_date" binding:"required"`
 	}
 
 	return func(c *gin.Context) {
@@ -34,6 +38,7 @@ func CreateAsset(assetService asset.Service) gin.HandlerFunc {
 		if err != nil {
 			loggerAssets.Error(err.Error())
 			c.JSON(http.StatusInternalServerError, Error{Message: err.Error()})
+
 			return
 		}
 
@@ -41,6 +46,8 @@ func CreateAsset(assetService asset.Service) gin.HandlerFunc {
 			desc := "There is something wrong with the data sent"
 			loggerAssets.WithError(err).Error(desc)
 			c.JSON(http.StatusBadRequest, Error{Message: desc, Error: err.Error()})
+
+			return
 		}
 
 		asset := asset.Asset{
@@ -49,6 +56,9 @@ func CreateAsset(assetService asset.Service) gin.HandlerFunc {
 			Description:      request.Description,
 			FinancialAssetID: request.FinAssetID,
 			UserID:           userID,
+			IsLiquid:         request.IsLiquid,
+			CategoryID:       request.CategoryID,
+			AdquisitionDate:  request.Adate,
 		}
 
 		err = assetService.Create(asset)
@@ -68,6 +78,7 @@ func GetAssets(assetService asset.Service) gin.HandlerFunc {
 	type getAssetsQuery struct {
 		FinAssetID uint   `form:"fin_asset_id"`
 		Name       string `form:"name"`
+		CategoryID uint   `form:"category_id"`
 	}
 
 	return func(c *gin.Context) {
@@ -76,6 +87,7 @@ func GetAssets(assetService asset.Service) gin.HandlerFunc {
 			desc := "Error binding the query"
 			loggerAssets.WithError(err).Error(desc)
 			c.JSON(http.StatusBadRequest, Error{Message: desc, Error: err.Error()})
+
 			return
 		}
 
@@ -83,14 +95,16 @@ func GetAssets(assetService asset.Service) gin.HandlerFunc {
 		if err != nil {
 			loggerAssets.Error(err.Error())
 			c.JSON(http.StatusInternalServerError, Error{Message: err.Error()})
+
 			return
 		}
 
-		assets, err := assetService.GetAssets(userID, query.FinAssetID, query.Name)
+		assets, err := assetService.GetAssets(userID, query.FinAssetID, query.Name, query.CategoryID)
 		if err != nil {
 			desc := "Error getting the assets"
 			loggerAssets.WithError(err).Error(desc)
 			c.JSON(http.StatusInternalServerError, Error{Message: desc, Error: err.Error()})
+
 			return
 		}
 
@@ -105,6 +119,7 @@ func GetAsset(assetService asset.Service) gin.HandlerFunc {
 		if err != nil {
 			loggerAssets.Error(err.Error())
 			c.JSON(http.StatusInternalServerError, Error{Message: err.Error()})
+
 			return
 		}
 
@@ -112,6 +127,7 @@ func GetAsset(assetService asset.Service) gin.HandlerFunc {
 		if err != nil {
 			loggerAssets.Error(err.Error())
 			c.JSON(http.StatusInternalServerError, Error{Message: err.Error()})
+
 			return
 		}
 
@@ -120,6 +136,7 @@ func GetAsset(assetService asset.Service) gin.HandlerFunc {
 			desc := "Error getting the asset"
 			loggerAssets.WithError(err).Error(desc)
 			c.JSON(http.StatusInternalServerError, Error{Message: desc, Error: err.Error()})
+
 			return
 		}
 
@@ -130,10 +147,13 @@ func GetAsset(assetService asset.Service) gin.HandlerFunc {
 // UpdateAsset is the controller for the update asset endpoint.
 func UpdateAsset(assetService asset.Service) gin.HandlerFunc {
 	type updateRequest struct {
-		Name        string  `json:"name"`
-		Value       float64 `json:"value"`
-		FinAssetID  uint    `json:"fin_asset_id"`
-		Description string  `json:"description"`
+		Name        string    `json:"name"`
+		Value       float64   `json:"value"`
+		FinAssetID  uint      `json:"fin_asset_id"`
+		Description string    `json:"description"`
+		IsLiquid    bool      `json:"is_liquid"`
+		CategoryID  uint      `json:"category_id"`
+		Adate       time.Time `json:"adquisition_date"`
 	}
 
 	return func(c *gin.Context) {
@@ -143,6 +163,7 @@ func UpdateAsset(assetService asset.Service) gin.HandlerFunc {
 		if err != nil {
 			loggerAssets.Error(err.Error())
 			c.JSON(http.StatusInternalServerError, Error{Message: err.Error()})
+
 			return
 		}
 
@@ -150,6 +171,7 @@ func UpdateAsset(assetService asset.Service) gin.HandlerFunc {
 		if err != nil {
 			loggerAssets.Error(err.Error())
 			c.JSON(http.StatusInternalServerError, Error{Message: err.Error()})
+
 			return
 		}
 
@@ -157,6 +179,8 @@ func UpdateAsset(assetService asset.Service) gin.HandlerFunc {
 			desc := "There is something wrong with the data sent"
 			loggerAssets.WithError(err).Error(desc)
 			c.JSON(http.StatusBadRequest, Error{Message: desc, Error: err.Error()})
+
+			return
 		}
 
 		asset := asset.Asset{
@@ -166,6 +190,9 @@ func UpdateAsset(assetService asset.Service) gin.HandlerFunc {
 			Description:      request.Description,
 			FinancialAssetID: request.FinAssetID,
 			UserID:           userID,
+			IsLiquid:         request.IsLiquid,
+			CategoryID:       request.CategoryID,
+			AdquisitionDate:  request.Adate,
 		}
 
 		err = assetService.Update(asset)
@@ -173,6 +200,7 @@ func UpdateAsset(assetService asset.Service) gin.HandlerFunc {
 			desc := "Error updating the asset"
 			loggerAssets.WithError(err).Error(desc)
 			c.JSON(http.StatusInternalServerError, Error{Message: desc, Error: err.Error()})
+
 			return
 		}
 
@@ -187,6 +215,7 @@ func DeleteAsset(assetService asset.Service) gin.HandlerFunc {
 		if err != nil {
 			loggerAssets.Error(err.Error())
 			c.JSON(http.StatusInternalServerError, Error{Message: err.Error()})
+
 			return
 		}
 
@@ -194,6 +223,7 @@ func DeleteAsset(assetService asset.Service) gin.HandlerFunc {
 		if err != nil {
 			loggerAssets.Error(err.Error())
 			c.JSON(http.StatusInternalServerError, Error{Message: err.Error()})
+
 			return
 		}
 
@@ -202,6 +232,7 @@ func DeleteAsset(assetService asset.Service) gin.HandlerFunc {
 			desc := "Error deleting the asset"
 			loggerAssets.WithError(err).Error(desc)
 			c.JSON(http.StatusInternalServerError, Error{Message: desc, Error: err.Error()})
+
 			return
 		}
 
